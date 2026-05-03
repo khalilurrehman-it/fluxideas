@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono";
+
+@theme {
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Courier New", monospace;
+
+  /* Brand palette */
+  --color-brand: oklch(0.60 0.27 263);
+  --color-brand-light: oklch(0.55 0.25 263);
+  --color-brand-dim: oklch(0.78 0.13 263);
+  --color-signal: oklch(0.52 0.18 145);
+  --color-signal-dim: oklch(0.68 0.14 145);
+
+  /* Agent pipeline stage colors */
+  --color-stage-scraping: oklch(0.65 0.20 220);
+  --color-stage-clustering: oklch(0.65 0.22 290);
+  --color-stage-validating: oklch(0.70 0.18 145);
+  --color-stage-generating: oklch(0.75 0.17 70);
+  --color-stage-done: oklch(0.82 0.22 140);
+  --color-stage-error: oklch(0.62 0.22 25);
+}
+
+@layer base {
+  :root {
+    --background: oklch(0.99 0 0);
+    --foreground: oklch(0.13 0.01 265);
+    --card: oklch(0.975 0.003 265);
+    --card-foreground: oklch(0.13 0.01 265);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.13 0.01 265);
+    --primary: oklch(0.60 0.27 263);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.94 0.006 265);
+    --secondary-foreground: oklch(0.25 0.01 265);
+    --muted: oklch(0.94 0.006 265);
+    --muted-foreground: oklch(0.50 0.01 265);
+    --accent: oklch(0.94 0.006 265);
+    --accent-foreground: oklch(0.25 0.01 265);
+    --destructive: oklch(0.55 0.22 25);
+    --border: oklch(0.89 0.007 265);
+    --input: oklch(0.93 0.005 265);
+    --ring: oklch(0.60 0.27 263);
+    --radius: 0.75rem;
+  }
+
+  * {
+    border-color: var(--border);
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Feed line entrance animation */
+@keyframes feed-line-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Radar pulse for the live dot indicator */
+@keyframes radar-ring-expand {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Blinking cursor for terminal */
+@keyframes terminal-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-feed-line-enter {
+  animation: feed-line-enter 0.3s ease-out forwards;
+}
+
+.animate-radar-ring {
+  animation: radar-ring-expand 1.8s ease-out infinite;
+}
+
+.animate-terminal-cursor {
+  animation: terminal-cursor-blink 1s step-end infinite;
+}
