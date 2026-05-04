@@ -17,7 +17,9 @@ import {
 } from "react-icons/tb";
 import { RESEARCH_SESSION_STORAGE_KEY } from "@/shared/constants/application-wide.constants";
 
-/* ── Stat card data ───────────────────────────────────────────── */
+const BACKEND_URL = import.meta.env.VITE_API_URL as string;
+
+/* ── Types ────────────────────────────────────────────────────── */
 
 interface DashboardStatCardData {
   statLabel: string;
@@ -28,40 +30,15 @@ interface DashboardStatCardData {
   statIconBgClass: string;
 }
 
-const DASHBOARD_STAT_CARDS_DATA: DashboardStatCardData[] = [
-  {
-    statLabel: "Total Researches",
-    statValue: "0",
-    statSubtext: "Start your first one below",
-    statIcon: TbSearch,
-    statIconColorClass: "text-violet-600",
-    statIconBgClass: "bg-violet-50 border-violet-200",
-  },
-  {
-    statLabel: "Reports Generated",
-    statValue: "0",
-    statSubtext: "PDF reports ready to download",
-    statIcon: TbFileReport,
-    statIconColorClass: "text-blue-600",
-    statIconBgClass: "bg-blue-50 border-blue-200",
-  },
-  {
-    statLabel: "Avg. Opportunity Score",
-    statValue: "—",
-    statSubtext: "Across all validated problems",
-    statIcon: TbTrendingUp,
-    statIconColorClass: "text-green-600",
-    statIconBgClass: "bg-green-50 border-green-200",
-  },
-  {
-    statLabel: "Research Time Saved",
-    statValue: "0 hrs",
-    statSubtext: "vs. manual product research",
-    statIcon: TbClock,
-    statIconColorClass: "text-amber-600",
-    statIconBgClass: "bg-amber-50 border-amber-200",
-  },
-];
+interface ReportRecord {
+  id: string;
+  topicQuery: string;
+  createdAt: string;
+  pdfDownloadUrl: string | null;
+  topValidatedProblems: {
+    selected_problem?: { problem_name: string; market_score?: number };
+  } | null;
+}
 
 function DashboardStatCard({ data }: { data: DashboardStatCardData }) {
   const StatIcon = data.statIcon;
@@ -89,46 +66,20 @@ function DashboardStatCard({ data }: { data: DashboardStatCardData }) {
   );
 }
 
-/* ── Recent reports placeholder ──────────────────────────────── */
+/* ── Recent reports table (real data) ────────────────────────── */
 
-interface RecentResearchReportRow {
-  reportId: string;
-  topicLabel: string;
-  createdAtDisplay: string;
-  problemsFound: number;
-  statusLabel: "done" | "running" | "failed";
-  topOpportunityScore: number;
+function formatRelativeTime(isoString: string) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "Just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
 }
 
-const PLACEHOLDER_RECENT_REPORTS: RecentResearchReportRow[] = [
-  {
-    reportId: "demo-1",
-    topicLabel: "Remote work productivity tools",
-    createdAtDisplay: "2 min ago",
-    problemsFound: 5,
-    statusLabel: "done",
-    topOpportunityScore: 87,
-  },
-  {
-    reportId: "demo-2",
-    topicLabel: "Freelancer invoicing & taxes",
-    createdAtDisplay: "Yesterday",
-    problemsFound: 5,
-    statusLabel: "done",
-    topOpportunityScore: 91,
-  },
-];
-
-const REPORT_STATUS_BADGE_CONFIG: Record<
-  RecentResearchReportRow["statusLabel"],
-  { label: string; className: string }
-> = {
-  done:    { label: "Done",    className: "text-green-700 bg-green-50 border-green-200"    },
-  running: { label: "Running", className: "text-violet-700 bg-violet-50 border-violet-200" },
-  failed:  { label: "Failed",  className: "text-red-700 bg-red-50 border-red-200"          },
-};
-
-function RecentReportsTable() {
+function RecentReportsTable({ reports }: { reports: ReportRecord[] }) {
+  const recent = reports.slice(0, 5);
   return (
     <Card className="bg-card border-border">
       <CardHeader className="pb-0">
@@ -142,58 +93,40 @@ function RecentReportsTable() {
         </div>
       </CardHeader>
       <CardContent className="pt-4">
-        {PLACEHOLDER_RECENT_REPORTS.length === 0 ? (
+        {recent.length === 0 ? (
           <div className="py-10 text-center text-sm text-muted-foreground/50">
             No research yet — run your first one above.
           </div>
         ) : (
           <div className="space-y-0">
-            {PLACEHOLDER_RECENT_REPORTS.map((reportRow, rowIndex) => {
-              const statusConfig = REPORT_STATUS_BADGE_CONFIG[reportRow.statusLabel];
+            {recent.map((report, idx) => {
+              const score = report.topValidatedProblems?.selected_problem?.market_score;
               return (
                 <div
-                  key={reportRow.reportId}
-                  className={`flex items-center gap-4 py-3.5 ${
-                    rowIndex < PLACEHOLDER_RECENT_REPORTS.length - 1
-                      ? "border-b border-border/40"
-                      : ""
-                  }`}
+                  key={report.id}
+                  className={`flex items-center gap-4 py-3.5 ${idx < recent.length - 1 ? "border-b border-border/40" : ""}`}
                 >
-                  {/* Topic */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {reportRow.topicLabel}
-                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">{report.topicQuery}</p>
                     <p className="text-xs text-muted-foreground/60 mt-0.5">
-                      {reportRow.createdAtDisplay} · {reportRow.problemsFound} problems found
+                      {formatRelativeTime(report.createdAt)}
+                      {report.topValidatedProblems?.selected_problem?.problem_name && (
+                        <> · {report.topValidatedProblems.selected_problem.problem_name}</>
+                      )}
                     </p>
                   </div>
-
-                  {/* Score */}
-                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                    <span className="text-xs text-muted-foreground/50">Top score</span>
-                    <span className="text-sm font-bold text-foreground tabular-nums">
-                      {reportRow.topOpportunityScore}
-                    </span>
-                    <span className="text-xs text-muted-foreground/40">/100</span>
-                  </div>
-
-                  {/* Status */}
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] shrink-0 ${statusConfig.className}`}
-                  >
-                    {statusConfig.label}
+                  {score !== undefined && (
+                    <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                      <span className="text-xs text-muted-foreground/50">Score</span>
+                      <span className="text-sm font-bold text-foreground tabular-nums">{score}</span>
+                      <span className="text-xs text-muted-foreground/40">/10</span>
+                    </div>
+                  )}
+                  <Badge variant="outline" className="text-[10px] shrink-0 text-green-700 bg-green-50 border-green-200">
+                    Done
                   </Badge>
-
-                  {/* Open link */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="shrink-0 w-7 h-7 text-muted-foreground/50 hover:text-foreground"
-                    asChild
-                  >
-                    <Link to={`/dashboard/reports/${reportRow.reportId}`}>
+                  <Button variant="ghost" size="icon" className="shrink-0 w-7 h-7 text-muted-foreground/50 hover:text-foreground" asChild>
+                    <Link to={`/dashboard/reports/${report.id}`}>
                       <TbExternalLink className="w-3.5 h-3.5" />
                     </Link>
                   </Button>
@@ -286,6 +219,57 @@ function NewResearchInputCard({ disabled }: { disabled?: boolean }) {
 
 export default function UserDashboardOverviewPage() {
   const { inProgress, topic } = useActiveResearchSession();
+  const [reports, setReports] = useState<ReportRecord[]>([]);
+
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/reports`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((body: { data?: ReportRecord[] }) => {
+        if (body.data) setReports(body.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const reportCount = reports.length;
+  const avgScore = reportCount > 0
+    ? (reports.reduce((sum, r) => sum + (r.topValidatedProblems?.selected_problem?.market_score ?? 0), 0) / reportCount).toFixed(1)
+    : "—";
+  const timeSaved = reportCount > 0 ? `${reportCount * 15} hrs` : "0 hrs";
+
+  const statCards: DashboardStatCardData[] = [
+    {
+      statLabel: "Total Researches",
+      statValue: String(reportCount),
+      statSubtext: reportCount === 0 ? "Start your first one below" : `${reportCount} completed`,
+      statIcon: TbSearch,
+      statIconColorClass: "text-violet-600",
+      statIconBgClass: "bg-violet-50 border-violet-200",
+    },
+    {
+      statLabel: "Reports Generated",
+      statValue: String(reportCount),
+      statSubtext: "PDF reports ready to download",
+      statIcon: TbFileReport,
+      statIconColorClass: "text-blue-600",
+      statIconBgClass: "bg-blue-50 border-blue-200",
+    },
+    {
+      statLabel: "Avg. Opportunity Score",
+      statValue: avgScore === "—" ? "—" : `${avgScore}/10`,
+      statSubtext: "Across all validated problems",
+      statIcon: TbTrendingUp,
+      statIconColorClass: "text-green-600",
+      statIconBgClass: "bg-green-50 border-green-200",
+    },
+    {
+      statLabel: "Research Time Saved",
+      statValue: timeSaved,
+      statSubtext: "vs. manual product research",
+      statIcon: TbClock,
+      statIconColorClass: "text-amber-600",
+      statIconBgClass: "bg-amber-50 border-amber-200",
+    },
+  ];
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -299,20 +283,14 @@ export default function UserDashboardOverviewPage() {
           </p>
         </div>
         {inProgress ? (
-          <Button
-            asChild
-            className="bg-amber-500 hover:bg-amber-600 text-white font-semibold gap-2 sm:shrink-0"
-          >
+          <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-semibold gap-2 sm:shrink-0">
             <Link to="/dashboard/research">
               <TbLoader2 className="w-4 h-4 animate-spin" />
               Research Running
             </Link>
           </Button>
         ) : (
-          <Button
-            asChild
-            className="bg-primary hover:bg-primary/85 text-primary-foreground font-semibold gap-2 sm:shrink-0"
-          >
+          <Button asChild className="bg-primary hover:bg-primary/85 text-primary-foreground font-semibold gap-2 sm:shrink-0">
             <Link to="/dashboard/research">
               <TbPlus className="w-4 h-4" />
               New Research
@@ -328,9 +306,7 @@ export default function UserDashboardOverviewPage() {
             <TbLoader2 className="w-4 h-4 text-amber-600 animate-spin shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-amber-900">Analysis in progress</p>
-              {topic && (
-                <p className="text-xs text-amber-700 truncate">"{topic}"</p>
-              )}
+              {topic && <p className="text-xs text-amber-700 truncate">"{topic}"</p>}
             </div>
           </div>
           <Button asChild size="sm" variant="outline" className="border-amber-300 text-amber-800 hover:bg-amber-100 shrink-0">
@@ -341,7 +317,7 @@ export default function UserDashboardOverviewPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {DASHBOARD_STAT_CARDS_DATA.map((statCardData) => (
+        {statCards.map((statCardData) => (
           <DashboardStatCard key={statCardData.statLabel} data={statCardData} />
         ))}
       </div>
@@ -350,7 +326,7 @@ export default function UserDashboardOverviewPage() {
       <NewResearchInputCard disabled={inProgress} />
 
       {/* Recent reports */}
-      <RecentReportsTable />
+      <RecentReportsTable reports={reports} />
 
     </div>
   );

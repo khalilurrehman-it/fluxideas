@@ -105,13 +105,18 @@ async function runPhase1InBackground(
 
     await dbUpdateStatus(searchId, "clustering");
 
-    const clusteringEvent: AgentActivityLogEvent = {
-      type: "log",
+    // Send all identified problems to the frontend so the user can see them
+    const problemsReadyEvent: AgentActivityLogEvent = {
+      type: "problems_ready",
       stage: "clustering",
-      message: `Top problem identified: "${topProblem.problem_name}" — starting deep-dive analysis...`,
+      message: `Found ${phase1Result.identified_problems.length} market gaps — auto-analyzing top opportunity: "${topProblem.problem_name}"`,
       timestamp: new Date().toISOString(),
+      data: {
+        identified_problems: phase1Result.identified_problems,
+        selected_problem: topProblem,
+      },
     };
-    broadcastAgentLogEventToResearchClients(searchId, clusteringEvent);
+    broadcastAgentLogEventToResearchClients(searchId, problemsReadyEvent);
 
     // Auto-select top problem and immediately run Phase 2
     void runPhase2InBackground(searchId, userId, searchId, topProblem);
@@ -201,6 +206,7 @@ async function runPhase2InBackground(
         blueprint: phase2Result.blueprint ?? null,
         market_size_analysis: phase2Result.market_size_analysis ?? null,
         risk_assessment: phase2Result.risk_assessment ?? null,
+        selected_problem: selectedProblem,
       },
     };
     broadcastAgentLogEventToResearchClients(searchId, completeEvent);

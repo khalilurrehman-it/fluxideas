@@ -67,7 +67,9 @@ interface AgentLogEvent {
   data?: {
     session_token?: string;
     identified_problems?: IdentifiedProblem[];
+    selected_problem?: IdentifiedProblem;
     search_job_id?: string;
+    report_id?: string;
     pdf_url?: string;
     pptx_url?: string;
     mockup_url?: string;
@@ -1059,28 +1061,30 @@ export default function UserResearchPage() {
           message: event.message,
           timestamp: event.timestamp,
         });
-        if (event.data.session_token) {
-          setSessionToken(event.data.session_token);
-        }
         if (event.data.identified_problems) {
           setProblems(event.data.identified_problems);
         }
-        setPageStage("problem_select");
-        wsRef.current?.close();
+        if (event.data.selected_problem) {
+          setDossier((prev) => ({ ...prev, selected_problem: event.data!.selected_problem }));
+        }
+        // Switch to phase2 feed — keep WebSocket open, Phase 2 complete event is still coming
+        setPageStage("phase2_feed");
       } else if (event.type === "complete" && event.data) {
         appendFeedLine({
           stage: event.stage,
           message: event.message,
           timestamp: event.timestamp,
         });
-        setDossier({
-          pdf_url: event.data.pdf_url,
-          pptx_url: event.data.pptx_url,
-          mockup_url: event.data.mockup_url,
-          blueprint: event.data.blueprint,
-          market_size_analysis: event.data.market_size_analysis,
-          risk_assessment: event.data.risk_assessment,
-        });
+        setDossier((prev) => ({
+          ...prev,
+          selected_problem: event.data!.selected_problem ?? prev?.selected_problem,
+          pdf_url: event.data!.pdf_url,
+          pptx_url: event.data!.pptx_url,
+          mockup_url: event.data!.mockup_url,
+          blueprint: event.data!.blueprint,
+          market_size_analysis: event.data!.market_size_analysis,
+          risk_assessment: event.data!.risk_assessment,
+        }));
         setCurrentAgentStage("done");
         setPageStage("complete");
         wsRef.current?.close();
@@ -1268,7 +1272,8 @@ export default function UserResearchPage() {
             variant="outline"
             size="sm"
             onClick={resetPage}
-            className="shrink-0 gap-1.5 text-xs"
+            disabled={pageStage === "phase1_feed" || pageStage === "phase2_feed"}
+            className="shrink-0 gap-1.5 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <TbRefresh className="w-3.5 h-3.5" />
             New Scan

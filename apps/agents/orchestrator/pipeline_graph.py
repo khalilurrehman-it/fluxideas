@@ -116,7 +116,7 @@ async def scout_node(state: IdeaRadarPipelineState) -> dict:
                 "date": "",
             }]
 
-        sources = sources[:12]
+        sources = sources[:15]
         raw_data = [s["text"] for s in sources]
 
         await stream_agent_progress_log_event_to_nodejs_backend(
@@ -178,7 +178,7 @@ async def researcher_node(state: IdeaRadarPipelineState) -> dict:
             with DDGS() as ddgs:
                 for query in queries:
                     try:
-                        for r in ddgs.text(query, max_results=4):
+                        for r in ddgs.text(query, max_results=8):
                             text = r.get("body", "")
                             title = r.get("title", "Search Result")
                             url = r.get("href", "")
@@ -245,7 +245,7 @@ async def researcher_node(state: IdeaRadarPipelineState) -> dict:
                                 body = submission.selftext or ""
                                 if len(body) > 50:
                                     praw_results.append({
-                                        "text": f"{submission.title}\n{body[:500]}",
+                                        "text": f"{submission.title}\n{body[:1000]}",
                                         "author": "Reddit",
                                         "url": f"https://reddit.com{submission.permalink}",
                                         "story_title": submission.title,
@@ -305,7 +305,7 @@ async def reasoner_node(state: IdeaRadarPipelineState) -> dict:
         human_readable_log_message=f"🧠 Reasoner: Synthesizing {len(raw_data)} data points with Claude...",
     )
 
-    raw_text = "\n\n".join(raw_data)[:6000]
+    raw_text = "\n\n".join(raw_data)[:20000]
 
     prompt = f"""You are a Deep Reasoning Agent. Perform a Chain-of-Thought analysis on raw market data.
 
@@ -385,13 +385,13 @@ async def analyst_node(state: IdeaRadarPipelineState) -> dict:
     ) if founder_profile else "No founder profile provided."
 
     prompt = f"""You are an expert Venture Capital Analyst and Product Strategist.
-Identify the TOP 10 most viable business problems/gaps based on the provided research.
+Identify the top business problems/gaps based on the provided research. Return between 5 and 10 problems — only as many as the data genuinely supports.
 
 CRITICAL: Factor in the FOUNDER PROFILE. If an idea matches their skills, give it a higher founder_fit_score.
 FOUNDER PROFILE: {founder_context}
 
 DATA (with sources):
-{raw_text[:8000]}
+{raw_text[:20000]}
 
 For each idea, provide a JSON object with these EXACT keys:
 - "problem_name": concise title (3-6 words)
@@ -406,7 +406,7 @@ For each idea, provide a JSON object with these EXACT keys:
 - "sentiment": 1 word describing user emotion
 - "source_refs": list of 1-3 objects {{"author": "...", "url": "...", "title": "..."}} from the data
 
-Return ONLY a JSON array of 10 objects, sorted by market_score (highest first). No markdown, no explanation."""
+Return ONLY a JSON array (5–10 objects), sorted by market_score (highest first). No markdown, no explanation."""
 
     try:
         response_text = await _call_claude(
