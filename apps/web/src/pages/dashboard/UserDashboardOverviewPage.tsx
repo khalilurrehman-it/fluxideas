@@ -15,7 +15,6 @@ import {
   TbPlus,
   TbLoader2,
 } from "react-icons/tb";
-import { BsArrowRight } from "react-icons/bs";
 import { RESEARCH_SESSION_STORAGE_KEY } from "@/shared/constants/application-wide.constants";
 
 /* ── Stat card data ───────────────────────────────────────────── */
