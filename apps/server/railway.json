@@ -1,10 +1,11 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "buildCommand": "pnpm --filter @FluxIdeas/server build"
   },
   "deploy": {
-    "startCommand": "npm run build && node dist/index.js",
+    "startCommand": "node apps/server/dist/index.js",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
