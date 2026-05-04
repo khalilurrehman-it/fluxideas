@@ -8,7 +8,7 @@ class ReportAgentOutput(BaseModel):
 
     research_topic: str
     search_job_id: str
-    pdf_report_cloudinary_url: str
+    pdf_report_cloudinary_url: str | None | None
     top_validated_problems: list[ValidatedProblem]
     total_posts_analyzed_count: int
     report_generated_at_utc: datetime
