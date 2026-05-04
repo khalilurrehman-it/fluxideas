@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import { serverEnvironment } from "../../config/environment-variables.config.js";
 import { broadcastAgentLogEventToResearchClients } from "../../websocket/agent-pipeline-websocket-server.js";
 import { HTTP_STATUS_CODES } from "../../shared/constants/http-status-code.constants.js";
-import type { AgentActivityLogEvent } from "@FluxIdeas/shared-types";
+import type { AgentActivityLogEvent } from "../../shared/types/pipeline.types.js";
 
 export const internalPipelineLogRouter = Router();
 

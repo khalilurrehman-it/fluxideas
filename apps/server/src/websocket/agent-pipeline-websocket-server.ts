@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage } from "http";
 import type { Server } from "http";
-import type { AgentActivityLogEvent } from "@FluxIdeas/shared-types";
+import type { AgentActivityLogEvent } from "../shared/types/pipeline.types.js";
 import { serverLogger } from "../config/logger.config.js";
 
 const activeResearchWebSocketConnections = new Map<string, Set<WebSocket>>();

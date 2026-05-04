@@ -7,7 +7,7 @@ import {
 } from "./market-research.repository.js";
 import { createNewReportRecord } from "../report-generation/report-generation.repository.js";
 import { broadcastAgentLogEventToResearchClients } from "../../websocket/agent-pipeline-websocket-server.js";
-import type { AgentActivityLogEvent } from "@FluxIdeas/shared-types";
+import type { AgentActivityLogEvent } from "../../shared/types/pipeline.types.js";
 
 // ---------------------------------------------------------------------------
 // Phase 1 response shape

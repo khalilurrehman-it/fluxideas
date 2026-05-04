@@ -1,4 +1,4 @@
-import type { ApiSuccessResponse, ApiErrorResponse } from "@FluxIdeas/shared-types";
+import type { ApiSuccessResponse, ApiErrorResponse } from "../types/pipeline.types.js";
 
 export function formatSuccessResponse<TData>(
   data: TData,
